@@ -1,0 +1,4 @@
+# Files/directories that will be ignored:
+node_modules
+dist
+build
