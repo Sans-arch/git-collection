@@ -1,32 +1,63 @@
-import React from 'react';
+import React, { ChangeEvent, FormEvent, useState } from 'react';
 import { FiChevronRight } from 'react-icons/fi';
 
+import { api } from '../../services/api';
 import { Title, Form, Repos } from './styles';
 import logo from '../../assets/logo.svg';
 
+interface GithubRepository {
+  full_name: string;
+  description: string;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
 export const Dashboard: React.FC = () => {
+  const [repos, setRepos] = useState<GithubRepository[]>([]);
+  const [newRepo, setNewRepo] = useState('');
+
+  function handleInputChange(event: ChangeEvent<HTMLInputElement>): void {
+    setNewRepo(event.target.value);
+  }
+
+  async function handleAddRepo(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> {
+    event.preventDefault();
+    const response = await api.get<GithubRepository>(`repos/${newRepo}`);
+
+    const repository = response.data;
+    setRepos(repos => [...repos, repository]);
+    setNewRepo('');
+  }
+
   return (
     <>
       <img src={logo} alt="GitCollection" />
       <Title>Catálogo de repositórios do GitHub</Title>
 
-      <Form>
-        <input placeholder="username/repository_name" type="text" />
+      <Form onSubmit={handleAddRepo}>
+        <input
+          placeholder="username/repository_name"
+          type="text"
+          onChange={handleInputChange}
+        />
         <button type="submit">Buscar</button>
       </Form>
 
       <Repos>
-        <a href="/repositories">
-          <img
-            src="https://avatars.githubusercontent.com/u/69471715?v=4"
-            alt="Repositorio"
-          />
-          <div>
-            <strong>Sans-arch/git-collection</strong>
-            <p>Projeto de uma aplicação ReactJS com TypeScript</p>
-          </div>
-          <FiChevronRight size={20} />
-        </a>
+        {repos.map(repo => (
+          <a href={repo.full_name} key={repo.full_name}>
+            <img src={repo.owner.avatar_url} alt={repo.owner.login} />
+            <div>
+              <strong>{repo.full_name}</strong>
+              <p>{repo.description}</p>
+            </div>
+            <FiChevronRight size={20} />
+          </a>
+        ))}
       </Repos>
     </>
   );
